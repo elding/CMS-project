@@ -396,6 +396,7 @@ void RecordText(void) {
 void DeleteText(void) {
 	return;
 }
+//hello!!
 
 void SendText(void) {
 
