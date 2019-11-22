@@ -14,7 +14,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #pragma warning(disable: 4996)
 
-char* COMPORT ;
+char* COMPORT;
 extern HANDLE hCom;
 
 union convert {
@@ -36,7 +36,7 @@ FILE* f;
 
 
 
- 
+
 
 
 int MainMenu(void) {
@@ -50,7 +50,7 @@ int MainMenu(void) {
 
 	scanf_s("\n \n %d", &input);
 
-	
+
 	if (input == 0) {
 		return 0;  // Terminates the program
 	}
@@ -148,7 +148,7 @@ void Queueing(void) {
 		switch (SubInput) {
 		case 1:
 			if (SubInput == 1) {
-				 return RecordText();
+				return RecordText();
 			}
 			break;
 		case 2:
@@ -233,19 +233,19 @@ void Testing(void) {
 	}
 }
 
-void TestRS232(void) {		
+void TestRS232(void) {
 	int Switcher;
-	
+
 	printf("Please indicate if sender or receiver. 1 for sender, 0 for receiver");
 	scanf_s("%d", &Switcher);
 	//COMPORT = "COM4";
 	COMPORT = (char*)malloc(10 * sizeof(char));
 	printf("%d", Switcher);
-	
+
 	if (Switcher == 1) {
 		//COMPORT[0] = "COM4";
-		COMPORT = (char*)"COM5";
-		
+		COMPORT = (char*)"COM10";
+
 		char msgOut[1024];// Sent message							// Received message
 		printf("Type something to send\n");
 		initPort();
@@ -257,7 +257,7 @@ void TestRS232(void) {
 	}
 
 	else if (Switcher == 0) {
-		COMPORT=(char*)"COM5";
+		COMPORT = (char*)"COM10";
 		initPort();
 		// Receiver program - comment out these 3 lines if sender - Start receiver first
 		char msgIn[BUFSIZE];
@@ -275,8 +275,8 @@ void TestRS232(void) {
 }
 
 int RecordAudio(void) {
-	
-	
+
+
 	// initialize playback and recording
 	InitializePlayback();
 	InitializeRecording();
@@ -344,12 +344,12 @@ void DisplayAddress(void) {
 }
 
 void RecordText(void) {
-	COMPORT = (char*)"COM7";
+	COMPORT = (char*)"\\\\.\\COM10";
 	int MessNum;
 	initPort();
 	char p[10];
 
-	char msgIn[BUFSIZE];
+	char msgIn[sizeof(Frame) + 1];
 	inputFromPort(msgIn, BUFSIZE);
 	MessNum = atoi(msgIn);
 
@@ -362,17 +362,19 @@ void RecordText(void) {
 	InitQueue();
 
 	for (int j = 0; j < MessNum; j++) {
-		receive = (link)malloc(sizeof(Node)); // initialize queue memory
-
-		//memset(msgIn, 0, 140);
+		receive = (link)malloc(sizeof(node)); // initialize queue memory
 
 
-		inputFromPort(msgIn, BUFSIZE);
+		inputFromPort(msgIn, sizeof(converter.buffer) + 1);
 
 		//memcpy(receive->Data.message, msgIn, BUFSIZE);
 
-		memcpy(converter.buffer, msgIn, sizeof(msgIn));
+		memcpy(converter.buffer, msgIn, sizeof(msgIn) + 1);
 
+		printf("Signature: %lx\n", converter.frame.h.lSignature);
+		printf("Message: %s\n", converter.frame.r.message);
+
+		receive->frame = converter.frame;
 
 		AddToQueue(receive);  // queue up messages with user input
 	}
@@ -380,14 +382,14 @@ void RecordText(void) {
 
 	link output;
 
-	/*while ((output = DeQueue()) != NULL) {
-		char MyBoi[140];
-		strcpy(MyBoi, output->Frame.message);
-		printf("%s", MyBoi);		// Send string to port - include space for '\0' termination
-		printf("\n");
+	while ((output = DeQueue()) != NULL) {
+		converter.frame = output->frame;
+		printf("\nFrame from queue:");
+		printf("Signature: %lx\n", converter.frame.h.lSignature);
+		printf("Message: %s\n", converter.frame.r.message);
 		Sleep(1000);									// Allow time for signal propagation on cable
 		free(output);
-	}*/
+	}
 
 	return;
 
@@ -396,7 +398,6 @@ void RecordText(void) {
 void DeleteText(void) {
 	return;
 }
-//hello!!
 
 void SendText(void) {
 
@@ -415,11 +416,11 @@ void SendText(void) {
 
 	itoa(i, NumMessage, 10); // number of messages we are going to send
 
-	
-	
+
+
 	COMPORT = (char*)malloc(10 * sizeof(char));
 
-	COMPORT = (char*)"COM7";
+	COMPORT = (char*)"COM10";
 	initPort();
 	outputToPort(NumMessage, 2);
 
@@ -429,14 +430,14 @@ void SendText(void) {
 	getchar();
 
 	for (int j = 0; j < i; j++) {
-		Frame holder = {NULL, NULL};
+		Frame holder = { NULL, NULL };
 
 		Header head = { 0,0,0,0,{0},0 };
 		head.lSignature = 0xDEADBEEF;
-		item message = {0,0,0,0,0,0};
+		item message = { 0,0,0,0,0,0 };
 		//message.message = msgOut;
-		
-	
+
+
 		temp = (link)malloc(sizeof(Node));
 
 		memset(msgOut, 0, 140);
@@ -444,7 +445,7 @@ void SendText(void) {
 		//getchar();					
 		printf("Type something to send\n");
 		fgets(msgOut, 140, stdin);
-		//printf("\n\n%s\n\n", msgOut);
+		printf("\n\n%s\n\n", msgOut);
 		fflush(stdin);
 
 		memcpy(message.message, msgOut, BUFSIZE);
@@ -452,16 +453,17 @@ void SendText(void) {
 		holder.h = head;
 		holder.r = message;
 		temp->frame = holder;
+
 		AddToQueue(temp);  // queue up messages with user input
 	}
 
-	
+
 
 	while ((node = DeQueue()) != NULL) {
 
 		converter.frame = node->frame;
-		printf("\n\nsize is: %d\n\n", sizeof(converter.buffer) + 1);
-		outputToPort(converter.buffer, sizeof(converter.buffer) + 1);			// Send string to port - include space for '\0' termination
+
+		outputToPort(converter.buffer, strlen(converter.buffer) + 1);			// Send string to port - include space for '\0' termination
 		Sleep(1000);									// Allow time for signal propagation on cable
 		free(node);
 	};
@@ -496,7 +498,7 @@ int TestRecord(void) {
 		fopen_s(&f, "C:\\Users\\boire\\Desktop\\ahhhh\recording.dat", "wb");
 		if (!f) {
 			printf("unable to open %s\n", "C:\\Users\\boire\\Desktop\\ahhhh\\recording.dat");
-			return 1 ;
+			return 1;
 		}
 		printf("Writing to sound file ...\n");
 		fwrite(iBigBuf, sizeof(short), lBigBufSize, f);
@@ -526,8 +528,8 @@ int TestRecord(void) {
 	printf("\n");
 	system("pause");
 	return 1;
-	
-	
+
+
 }
 int TestPlayback(void) {
 	// replay audio recording from file -- read and store in buffer, then use playback() to play it
@@ -554,22 +556,3 @@ int TestPlayback(void) {
 	system("pause");
 	return 1;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
