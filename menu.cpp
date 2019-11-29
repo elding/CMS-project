@@ -15,7 +15,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #pragma warning(disable: 4996)
 
-char AudioBuff[2000];
+char AudioBuff[200000];
 
 char* COMPORT;
 extern HANDLE hCom;
@@ -300,7 +300,7 @@ char* RecordAudio(void) {
 		fopen_s(&f, "C:\\Users\\Sean\\Desktop\\Data Structures\\Sound\\recording.dat", "wb");
 		if (!f) {
 			printf("unable to open %s\n", "C:\\Users\\Sean\\Desktop\\Data Structures\\Sound\\recording.dat");
-			return;
+			return AudioBuff;
 		}
 		printf("Writing to sound file ...\n");
 		fwrite(iBigBuf, sizeof(short), lBigBufSize, f);
@@ -315,22 +315,14 @@ char* RecordAudio(void) {
 }
 
 int Playback(void) {
+	COMPORT = (char*)"COM7";
+	initPort();
 
-	// replay audio recording from file -- read and store in buffer, then use playback() to play it
-	printf("Would you like to replay the saved audio recording from the file? (y/n): ");
-	scanf_s("%c", &replay, 1);
-	while ((c = getchar()) != '\n' && c != EOF) {}								// Flush other input
-	if ((replay == 'y') || (replay == 'Y')) {
-		/* Open input file */
-		fopen_s(&f, "C:\\Users\\Sean\\Desktop\\Data Structures\\Sound\\recording.dat", "rb");
-		if (!f) {
-			printf("unable to open %s\n", "C:\\Users\\Sean\\Desktop\\Data Structures\\Sound\\recording.dat");
-			return 1;
-		}
-		printf("Reading from sound file ...\n");
-		fread(iBigBufNew, sizeof(short), lBigBufSize, f);				// Record to new buffer iBigBufNew
-		fclose(f);
-	}
+	inputFromPort(iBigBufNew, sizeof(converter.buffer));
+
+	//memcpy(receive->Data.message, msgIn, BUFSIZE);
+
+
 	InitializePlayback();
 	printf("\nPlaying recording from saved file ...\n");
 	PlayBuffer(iBigBufNew, lBigBufSize);
@@ -574,9 +566,9 @@ void TransmitMessage(void) {
 
 	int i;
 	printf("Please press 1 for audio message, 2 for text message \n");
-	unsigned char AudioMess[2000];
+	unsigned char AudioMess[200000];
 
-	scanf_s("%d", i);
+	scanf_s("%d", &i);
 
 	if (i == 1) {
 		memcpy(AudioMess, RecordAudio(), sizeof(RecordAudio())); // records audio using prewritten function and saves to a file for debug, and writes to buffer
@@ -591,8 +583,9 @@ void TransmitMessage(void) {
 		//message.message = msgOut;
 
 		head.isAudio = 1;
-		RLECompress(AudioMess, sizeof(AudioMess), (unsigned char*)message.later, sizeof(message.later), '%'); // compress items into a buffer, right now is same size as original
+		//RLECompress(AudioMess, sizeof(AudioMess), (unsigned char*)message.later, sizeof(message.later), '%'); // compress items into a buffer, right now is same size as original
 
+		memcpy((unsigned char*)message.later, AudioMess, sizeof(AudioMess));
 
 		converter.frame = holder;
 
@@ -610,3 +603,4 @@ void TransmitMessage(void) {
 
 
 }
+
