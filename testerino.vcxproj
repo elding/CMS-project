@@ -127,6 +127,7 @@
     <ClCompile Include="menu.cpp" />
     <ClCompile Include="message.cpp" />
     <ClCompile Include="Queues.cpp" />
+    <ClCompile Include="RLE.cpp" />
     <ClCompile Include="RS232Comm-Receiver.cpp" />
     <ClCompile Include="sound.cpp" />
   </ItemGroup>
@@ -135,6 +136,7 @@
     <ClInclude Include="menu.h" />
     <ClInclude Include="message.h" />
     <ClInclude Include="Queues.h" />
+    <ClInclude Include="RLE.h" />
     <ClInclude Include="RS232Comm.h" />
     <ClInclude Include="sound.h" />
   </ItemGroup>

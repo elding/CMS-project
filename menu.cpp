@@ -8,11 +8,14 @@
 #include <Windows.h>  // Includes the functions for serial communication via RS232
 #include <stdlib.h>
 #include "RS232Comm.h"
+#include "RLE.h"
 
 #define EX_FATAL 1
 #define BUFSIZE 140
 #define _CRT_SECURE_NO_WARNINGS
 #pragma warning(disable: 4996)
+
+char AudioBuff[2000];
 
 char* COMPORT;
 extern HANDLE hCom;
@@ -124,6 +127,7 @@ void Sound(void) {
 		}
 		break;
 	}
+	MainMenu();
 }
 
 
@@ -164,6 +168,7 @@ void Queueing(void) {
 			break;
 		}
 	}
+	MainMenu();
 }
 
 
@@ -195,6 +200,7 @@ void Phonebook(void) {
 		break;
 
 	}
+	MainMenu();
 }
 
 
@@ -231,6 +237,7 @@ void Testing(void) {
 		break;
 
 	}
+	MainMenu();
 }
 
 void TestRS232(void) {
@@ -274,7 +281,7 @@ void TestRS232(void) {
 
 }
 
-int RecordAudio(void) {
+char* RecordAudio(void) {
 
 
 	// initialize playback and recording
@@ -293,13 +300,18 @@ int RecordAudio(void) {
 		fopen_s(&f, "C:\\Users\\Sean\\Desktop\\Data Structures\\Sound\\recording.dat", "wb");
 		if (!f) {
 			printf("unable to open %s\n", "C:\\Users\\Sean\\Desktop\\Data Structures\\Sound\\recording.dat");
-			return 1;
+			return;
 		}
 		printf("Writing to sound file ...\n");
 		fwrite(iBigBuf, sizeof(short), lBigBufSize, f);
 		fclose(f);
 	}
-	return 1;
+
+	memcpy(AudioBuff, (char*)iBigBuf, sizeof((char*)iBigBuf));
+
+	return AudioBuff;
+	
+	
 }
 
 int Playback(void) {
@@ -344,7 +356,7 @@ void DisplayAddress(void) {
 }
 
 void RecordText(void) {
-	COMPORT = (char*)"\\\\.\\COM10";
+	COMPORT = (char*)"COM7";
 	int MessNum;
 	initPort();
 	char p[10];
@@ -365,13 +377,13 @@ void RecordText(void) {
 		receive = (link)malloc(sizeof(node)); // initialize queue memory
 
 
-		inputFromPort(msgIn, sizeof(converter.buffer) + 1);
+		inputFromPort(msgIn, sizeof(converter.buffer) );
 
 		//memcpy(receive->Data.message, msgIn, BUFSIZE);
 
-		memcpy(converter.buffer, msgIn, sizeof(msgIn) + 1);
+		memcpy(converter.buffer, msgIn, sizeof(msgIn) );
 
-		printf("Signature: %lx\n", converter.frame.h.lSignature);
+		
 		printf("Message: %s\n", converter.frame.r.message);
 
 		receive->frame = converter.frame;
@@ -385,7 +397,6 @@ void RecordText(void) {
 	while ((output = DeQueue()) != NULL) {
 		converter.frame = output->frame;
 		printf("\nFrame from queue:");
-		printf("Signature: %lx\n", converter.frame.h.lSignature);
 		printf("Message: %s\n", converter.frame.r.message);
 		Sleep(1000);									// Allow time for signal propagation on cable
 		free(output);
@@ -420,7 +431,7 @@ void SendText(void) {
 
 	COMPORT = (char*)malloc(10 * sizeof(char));
 
-	COMPORT = (char*)"COM10";
+	COMPORT = (char*)"COM7";
 	initPort();
 	outputToPort(NumMessage, 2);
 
@@ -432,10 +443,10 @@ void SendText(void) {
 	for (int j = 0; j < i; j++) {
 		Frame holder = { NULL, NULL };
 
-		Header head = { 0,0,0,0,{0},0 };
-		head.lSignature = 0xDEADBEEF;
-		item message = { 0,0,0,0,0,0 };
+		Header head = { 0,0,0,0};
+		item message = { 0,0,0 };
 		//message.message = msgOut;
+		head.isAudio = 0;
 
 
 		temp = (link)malloc(sizeof(Node));
@@ -463,7 +474,7 @@ void SendText(void) {
 
 		converter.frame = node->frame;
 
-		outputToPort(converter.buffer, strlen(converter.buffer) + 1);			// Send string to port - include space for '\0' termination
+		outputToPort(converter.buffer, sizeof(converter.buffer) + 1);			// Send string to port - include space for '\0' termination
 		Sleep(1000);									// Allow time for signal propagation on cable
 		free(node);
 	};
@@ -555,4 +566,47 @@ int TestPlayback(void) {
 	printf("\n");
 	system("pause");
 	return 1;
+}
+
+
+
+void TransmitMessage(void) {
+
+	int i;
+	printf("Please press 1 for audio message, 2 for text message \n");
+	unsigned char AudioMess[2000];
+
+	scanf_s("%d", i);
+
+	if (i == 1) {
+		memcpy(AudioMess, RecordAudio(), sizeof(RecordAudio())); // records audio using prewritten function and saves to a file for debug, and writes to buffer
+
+		Frame holder = { NULL, NULL };  // create a message frame with header and payload
+
+		Header head = { 0,0,0,0 }; // Sender id, receiver id, priority value, audio flag
+		item message = { 0,0}; // text or audio message. Can be both, implement later
+
+		holder.h = head;
+		holder.r = message;
+		//message.message = msgOut;
+
+		head.isAudio = 1;
+		RLECompress(AudioMess, sizeof(AudioMess), (unsigned char*)message.later, sizeof(message.later), '%'); // compress items into a buffer, right now is same size as original
+
+
+		converter.frame = holder;
+
+
+		outputToPort(converter.buffer, sizeof(converter.buffer) + 1);			// Send audio message over RS232 cable
+		Sleep(1000);									// Allow time for signal propagation on cable
+
+
+	}
+	else if (i == 2) {
+
+		SendText(); // call the send text function. Can transmit any number of text messages
+	}
+
+
+
 }

@@ -23,7 +23,7 @@ void Testing(void);
 
 void DisplayAddress(void);
 
-int RecordAudio(void);
+char* RecordAudio(void);
 int Playback(void);
 void SoundSettings(void);
 void RecordText(void);
@@ -33,6 +33,7 @@ void ChangeAddress(void);
 int TestRecord(void);
 int TestPlayback(void);
 void TestRS232(void);
+void TransmitMessage(void);
 
 
 

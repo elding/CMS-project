@@ -14,11 +14,7 @@ typedef Node* link;
 
 struct item {
 	char message[iLength];
-	short int sid;        //Sender ID
-	short int rid;		  // Reciever ID
-	char priority;		  // Priority of message
-	short int seqNum;	  // Sequence number of a message
-	char later[25];
+	char later[2000];
 };
 
 
