@@ -15,7 +15,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #pragma warning(disable: 4996)
 
-char AudioBuff[200000];
+char AudioBuff[960000];
 
 char* COMPORT;
 extern HANDLE hCom;
@@ -26,8 +26,8 @@ union convert {
 }converter;
 
 union shortToChar {
-	char chr[20000];
-	short shrt[10000];
+	char chr[960000];
+	short shrt[480000];
 }shortToChar;
 
 
@@ -390,7 +390,7 @@ void DisplayAddress(void) {
 }
 
 void RecordText(void) {
-	COMPORT = (char*)"COM7";
+	COMPORT = (char*)"COM5";
 	int MessNum;
 	initPort();
 	char p[10];
@@ -465,7 +465,7 @@ void SendText(void) {
 
 	COMPORT = (char*)malloc(10 * sizeof(char));
 
-	COMPORT = (char*)"COM7";
+	COMPORT = (char*)"COM5";
 	initPort();
 	outputToPort(NumMessage, 2);
 
@@ -652,6 +652,9 @@ void TransmitMessage(void) {
 		Sleep(1000);									// Allow time for signal propagation on cable
 
 
+		purgePort();
+		CloseHandle(hCom);
+		
 	}
 	else if (i == 2) {
 

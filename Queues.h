@@ -14,7 +14,7 @@ typedef Node* link;
 
 struct item {
 	char message[iLength];
-	char later[200000];
+	char later[960000];
 };
 
 
