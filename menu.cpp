@@ -25,6 +25,10 @@ union convert {
 	char buffer[sizeof(Frame)];
 }converter;
 
+union shortToChar {
+	char chr[20000];
+	short shrt[10000];
+}shortToChar;
 
 
 
@@ -222,12 +226,12 @@ void Testing(void) {
 	switch (SubInput) {
 	case 1:
 		if (SubInput == 1) {
-			TestRecord();
+			TransmitMessage();
 		}
 		break;
 	case 2:
 		if (SubInput == 2) {
-			TestPlayback();
+			Playback();
 		}
 		break;
 	case 3:
@@ -284,22 +288,29 @@ void TestRS232(void) {
 char* RecordAudio(void) {
 
 
-	// initialize playback and recording
 	InitializePlayback();
 	InitializeRecording();
 
 	// start recording
 	RecordBuffer(iBigBuf, lBigBufSize);
 	CloseRecording();
+
+	// playback recording 
+	printf("\nPlaying recording from buffer\n");
+	PlayBuffer(iBigBuf, lBigBufSize);
+	ClosePlayback();
+
+	memcpy_s(shortToChar.shrt, sizeof(shortToChar.shrt), iBigBuf, lBigBufSize * 2);
+
 	// save audio recording  
 	printf("Would you like to save your audio recording? (y/n): ");
 	scanf_s("%c", &save, 1);
 	while ((c = getchar()) != '\n' && c != EOF) {}								// Flush other input
 	if ((save == 'y') || (save == 'Y')) {
 		/* Open input file */
-		fopen_s(&f, "C:\\Users\\Sean\\Desktop\\Data Structures\\Sound\\recording.dat", "wb");
+		fopen_s(&f, "C:\\Users\\boire\\Desktop\\ahhhh\recording.dat", "wb");
 		if (!f) {
-			printf("unable to open %s\n", "C:\\Users\\Sean\\Desktop\\Data Structures\\Sound\\recording.dat");
+			printf("unable to open %s\n", "C:\\Users\\boire\\Desktop\\ahhhh\\recording.dat");
 			return AudioBuff;
 		}
 		printf("Writing to sound file ...\n");
@@ -307,37 +318,68 @@ char* RecordAudio(void) {
 		fclose(f);
 	}
 
-	memcpy(AudioBuff, (char*)iBigBuf, sizeof((char*)iBigBuf));
-
-	return AudioBuff;
-	
-	
-}
-
-int Playback(void) {
-	COMPORT = (char*)"COM7";
-	initPort();
-
-	inputFromPort(iBigBufNew, sizeof(converter.buffer));
-
-	//memcpy(receive->Data.message, msgIn, BUFSIZE);
-
-
+	// replay audio recording from file -- read and store in buffer, then use playback() to play it
+	printf("Would you like to replay the saved audio recording from the file? (y/n): ");
+	scanf_s("%c", &replay, 1);
+	while ((c = getchar()) != '\n' && c != EOF) {}								// Flush other input
+	if ((replay == 'y') || (replay == 'Y')) {
+		/* Open input file */
+		fopen_s(&f, "C:\\Users\\boire\\Desktop\\ahhhh\\recording.dat", "rb");
+		if (!f) {
+			printf("unable to open %s\n", "C:\\Users\\boire\\Desktop\\ahhhh\\recording.dat");
+			return AudioBuff;
+		}
+		printf("Reading from sound file ...\n");
+		fread(iBigBufNew, sizeof(short), lBigBufSize, f);				// Record to new buffer iBigBufNew
+		fclose(f);
+	}
 	InitializePlayback();
 	printf("\nPlaying recording from saved file ...\n");
 	PlayBuffer(iBigBufNew, lBigBufSize);
 	ClosePlayback();
 
+	memcpy_s(AudioBuff, sizeof(AudioBuff), iBigBuf, lBigBufSize * 2);
+
+
 	printf("\n");
 	system("pause");
-	return 1;
+	return shortToChar.chr;
+	
+	
+}
+
+int Playback(void) {
+	COMPORT = (char*)"COM5";
+	union shortToChar shortToChar2;
+	
+	initPort();
+	
+
+	inputFromPort(shortToChar2.chr, sizeof(shortToChar2.chr));
+
+
+
+	InitializePlayback();
+	printf("\nPlaying recording from saved file ...\n");
+	PlayBuffer(shortToChar2.shrt, sizeof(shortToChar2.chr)/2);
+	ClosePlayback();
+
+	printf("\n");
+	system("pause");
+	return 1; 
+	
+
+
+
 
 }
 
 void SoundSettings(void) {
 
 	printf("Not implemented yet");
-	return;
+	return; 
+
+
 
 }
 
@@ -528,6 +570,8 @@ int TestRecord(void) {
 	PlayBuffer(iBigBufNew, lBigBufSize);
 	ClosePlayback();
 
+
+
 	printf("\n");
 	system("pause");
 	return 1;
@@ -566,12 +610,13 @@ void TransmitMessage(void) {
 
 	int i;
 	printf("Please press 1 for audio message, 2 for text message \n");
-	unsigned char AudioMess[200000];
+	char AudioMess[200000];
 
 	scanf_s("%d", &i);
 
 	if (i == 1) {
-		memcpy(AudioMess, RecordAudio(), sizeof(RecordAudio())); // records audio using prewritten function and saves to a file for debug, and writes to buffer
+
+		memcpy_s(shortToChar.chr, sizeof(shortToChar.chr), RecordAudio(), 20000);
 
 		Frame holder = { NULL, NULL };  // create a message frame with header and payload
 
@@ -585,10 +630,23 @@ void TransmitMessage(void) {
 		head.isAudio = 1;
 		//RLECompress(AudioMess, sizeof(AudioMess), (unsigned char*)message.later, sizeof(message.later), '%'); // compress items into a buffer, right now is same size as original
 
-		memcpy((unsigned char*)message.later, AudioMess, sizeof(AudioMess));
+		memcpy_s(message.later, sizeof(message.later), shortToChar.chr, sizeof(shortToChar.chr));
 
 		converter.frame = holder;
 
+		COMPORT = (char*)malloc(10 * sizeof(char));
+
+		COMPORT = (char*)"COM5";
+		
+		/*InitializePlayback();
+
+		PlayBuffer(shortToChar.shrt, sizeof(shortToChar.shrt)/2 );
+
+		ClosePlayback();*/
+
+		memcpy(converter.buffer, shortToChar.chr, sizeof(shortToChar.chr));
+
+		initPort();
 
 		outputToPort(converter.buffer, sizeof(converter.buffer) + 1);			// Send audio message over RS232 cable
 		Sleep(1000);									// Allow time for signal propagation on cable
