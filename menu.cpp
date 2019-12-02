@@ -20,7 +20,9 @@
 
 char* AudioBuff = (char*)malloc((AudioSize * sizeof(char)));
 
-char* COMPORT;
+char* COMPORT = (char*)"COM7";
+
+
 extern HANDLE hCom;
 
 union Textconvert {
@@ -261,12 +263,11 @@ void TestRS232(void) {
 	printf("Please indicate if sender or receiver. 1 for sender, 0 for receiver");
 	scanf_s("%d", &Switcher);
 	//COMPORT = "COM4";
-	COMPORT = (char*)malloc(10 * sizeof(char));
+	
 	printf("%d", Switcher);
 
 	if (Switcher == 1) {
 		//COMPORT[0] = "COM4";
-		COMPORT = (char*)"COM10";
 
 		char msgOut[1024];// Sent message							// Received message
 		printf("Type something to send\n");
@@ -279,7 +280,6 @@ void TestRS232(void) {
 	}
 
 	else if (Switcher == 0) {
-		COMPORT = (char*)"COM10";
 		initPort();
 		// Receiver program - comment out these 3 lines if sender - Start receiver first
 		char msgIn[BUFSIZE];
@@ -328,27 +328,26 @@ char* RecordAudio(void) {
 }
 
 int Playback(void) {
-	COMPORT = (char*)"COM5";
 	union shortToChar shortToChar2;
 
-	shortToChar2.chr = (char*)malloc(AudioSize * sizeof(char));
+	shortToChar2.chr = (char*)malloc(AudioSize * sizeof(char));				// set aside memory for storage. Transistions from chars to shorts
 	shortToChar2.shrt = (short*)malloc(AudioSize/2 * sizeof(char));
 	
-	initPort();
+	initPort();																// open the com port
 	
 
-	inputFromPort(shortToChar2.chr, sizeof(shortToChar2.chr));
+	inputFromPort(shortToChar2.chr, sizeof(shortToChar2.chr));				// read data that was sent
 
 
 
-	InitializePlayback();
+	InitializePlayback();													// play the audio file
 	printf("\nPlaying recording from saved file ...\n");
-	PlayBuffer(shortToChar2.shrt,( sizeof(*shortToChar2.chr)) /2);
+	PlayBuffer(shortToChar2.shrt, AudioSize/2);
 	ClosePlayback();
 
 	printf("\n");
 	system("pause");
-	return 1; 
+	return 0; 
 	
 
 
@@ -372,7 +371,7 @@ void DisplayAddress(void) {
 }
 
 void RecordText(void) {
-	COMPORT = (char*)"COM5";
+
 	int MessNum;
 	initPort();
 	char p[10];
@@ -445,9 +444,6 @@ void SendText(void) {
 
 
 
-	COMPORT = (char*)malloc(10 * sizeof(char));
-
-	COMPORT = (char*)"COM5";
 	initPort();
 	outputToPort(NumMessage, 2);
 
@@ -498,6 +494,16 @@ void SendText(void) {
 }
 
 void ChangeAddress(void) {
+
+	printf("Please select your COM address between 1-9");
+
+	int i;
+
+	scanf("%d", &i);
+
+	
+
+
 	return;
 
 }
@@ -624,9 +630,7 @@ void TransmitMessage(void) {
 
 		Audioconverter.frame = holder;
 
-		COMPORT = (char*)malloc(10 * sizeof(char));
 
-		COMPORT = (char*)"COM5";
 		
 		/*InitializePlayback();
 
@@ -646,7 +650,7 @@ void TransmitMessage(void) {
 		Sleep(1000);									// Allow time for signal propagation on cable
 
 		free(shortTochar.chr);
-		free(shortTochar.shrt);
+
 
 		purgePort();
 		CloseHandle(hCom);
