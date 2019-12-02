@@ -3,29 +3,40 @@
  *  by Sean Berkvens, 2019
  */
 
-
+#include <Windows.h>
 #include "frame.h"
 
 const int iLength = 140;
 
-typedef struct node Node;
+typedef struct nodeText Node;
 typedef struct item Item;
 typedef Node* link;
 
-struct item {
+struct textpayload {
 	char message[iLength];
-	char later[960000];
+	
+};
+
+struct AudioPayload {
+	char later[96000];
 };
 
 
-struct Frame {
+struct TextFrame {
 	Header h;
-	item r;
+	textpayload r;
 };
 
-struct node {
+struct AudioFrame {
+
+	Header h;
+	AudioPayload r;
+
+};
+
+struct nodeText {
 	link pNext;
-	Frame frame;
+	TextFrame frame;
 };
 
 

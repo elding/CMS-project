@@ -37,4 +37,7 @@ void TransmitMessage(void);
 
 
 
-// creating the frame i think
+// Constants for changing
+
+
+
