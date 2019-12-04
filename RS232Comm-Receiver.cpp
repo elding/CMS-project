@@ -15,7 +15,8 @@ extern char* COMPORT;
 // Communication variables and parameters
 
  HANDLE hCom;										// Pointer to a COM port
-extern int nComRate = 9600;								// Baud (Bit) rate in bits/second 
+//extern int nComRate = 9600;								// Baud (Bit) rate in bits/second 
+extern int nComRate = 115000;								// Baud (Bit) rate in bits/second 
 extern int nComBits = 8;									// Number of bits per frame
 COMMTIMEOUTS timeout;								// A commtimout struct variable
 

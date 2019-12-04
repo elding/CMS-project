@@ -20,8 +20,11 @@
 
 char* AudioBuff = (char*)malloc((AudioSize * sizeof(char)));
 
-char* COMPORT = (char*)"COM7";
+char* COMPORT = (char*)"COM8";
 
+int SenderID = 0;
+int ReceiverID = 0;
+int Priority = 0;
 
 extern HANDLE hCom;
 
@@ -32,15 +35,15 @@ union Textconvert {
 
 union AudioConverter {
 	AudioFrame frame;
-	char* buffer;
+	char buffer[96000];
 };
 
 
 
 
 union shortToChar {
-	char* chr;
-	short* shrt;
+	char chr[96000];
+	short shrt[];
 };
 
 
@@ -299,8 +302,8 @@ void TestRS232(void) {
 char* RecordAudio(void) {
 
 	union shortToChar shortTochar;
-	shortTochar.chr = (char*)malloc(AudioSize * sizeof(char));
-	shortTochar.shrt = (short*)malloc(AudioSize/2 * sizeof(short));
+	//shortTochar.chr = (char*)malloc(AudioSize * sizeof(char));
+	//shortTochar.shrt = (short*)malloc(AudioSize/2 * sizeof(short));
 
 	InitializePlayback();
 	InitializeRecording();
@@ -330,8 +333,8 @@ char* RecordAudio(void) {
 int Playback(void) {
 	union shortToChar shortToChar2;
 
-	shortToChar2.chr = (char*)malloc(AudioSize * sizeof(char));				// set aside memory for storage. Transistions from chars to shorts
-	shortToChar2.shrt = (short*)malloc(AudioSize/2 * sizeof(char));
+	//shortToChar2.chr = (char*)malloc(AudioSize * sizeof(char));				// set aside memory for storage. Transistions from chars to shorts
+	//shortToChar2.shrt = (short*)malloc(AudioSize/2 * sizeof(char));
 	
 	initPort();																// open the com port
 	
@@ -367,6 +370,40 @@ void SoundSettings(void) {
 
 
 void DisplayAddress(void) {
+
+	char c;
+	char v;
+	int i;
+	int j;
+
+	printf("\n SenderID = %d \n ReceiverID = %d", SenderID, ReceiverID);
+
+	printf(" \n Would you like to change the sender id?");
+
+	scanf("%c", &c);
+
+	if (c == 'y' || c == 'Y') {
+
+		printf(" \n Please input your sender id");
+		scanf("%d", &i);
+
+		SenderID = i;
+
+	}
+
+	printf("\n Would you like to change the receiver id?");
+
+	scanf("%c", &v);
+
+	if (v == 'y' || v == 'Y') {
+		printf(" \n Please input your receiver id");
+		scanf("%d", &j);
+
+		ReceiverID = j;
+
+	}
+
+
 	return;
 }
 
@@ -459,6 +496,9 @@ void SendText(void) {
 		textpayload message = {0};
 		//message.message = msgOut;
 		head.isAudio = 0;
+		head.sid = SenderID;
+		head.rid = ReceiverID;
+		head.priority = Priority;
 
 
 		temp = (link)malloc(sizeof(nodeText));
@@ -501,8 +541,21 @@ void ChangeAddress(void) {
 
 	scanf("%d", &i);
 
+	char addresses[9][5] = {
+		"COM1",
+		"COM2",
+		"COM3",
+		"COM4",
+		"COM5",
+		"COM6",
+		"COM7",
+		"COM8",
+		"COM9",
+	};
+
 	
 
+	strcpy(COMPORT, addresses[i]);
 
 	return;
 
@@ -597,15 +650,25 @@ int TestPlayback(void) {
 void TransmitMessage(void) {
 
 	int i;
+	int j;
+
+	printf("\n Please input a message priority");
+
+	scanf_s("%d", &j);
+
+	Priority = j;
+
 	printf("Please press 1 for audio message, 2 for text message \n");
 
 	scanf_s("%d", &i);
 
 	union shortToChar shortTochar;
-	shortTochar.chr = (char*)malloc(AudioSize * sizeof(char));
-	shortTochar.shrt = (short*)malloc(AudioSize/2 * sizeof(short));
+	//shortTochar.chr = (char*)malloc(AudioSize * sizeof(char));
+	//shortTochar.shrt = (short*)malloc(AudioSize/2 * sizeof(short));
 
-	printf("%d", &shortTochar.chr);
+	
+
+
 
 	if (i == 1) {
 
@@ -616,7 +679,12 @@ void TransmitMessage(void) {
 		Header head = { 0,0,0,0 }; // Sender id, receiver id, priority value, audio flag
 		AudioPayload message = { 0 }; // text or audio message. Can be both, implement later
 
+
+
 		head.isAudio = 1;
+		head.sid = SenderID;
+		head.rid = ReceiverID;
+		head.priority = Priority;
 
 		holder.h = head;
 		holder.r = message;
@@ -625,7 +693,7 @@ void TransmitMessage(void) {
 		head.isAudio = 1;
 
 		//RLECompress(AudioMess, sizeof(AudioMess), (unsigned char*)message.later, sizeof(message.later), '%'); // compress items into a buffer, right now is same size as original
-		memcpy_s(message.later, sizeof(message.later), shortTochar.chr, sizeof(shortTochar.chr));
+		memcpy_s(message.later, AudioSize, shortTochar.chr, AudioSize);
 		AudioConverter Audioconverter;
 
 		Audioconverter.frame = holder;
@@ -640,16 +708,16 @@ void TransmitMessage(void) {
 
 		//memcpy(converter.buffer, shortToChar.chr, sizeof(shortToChar.chr));
 
-		Audioconverter.buffer = (char*)malloc(AudioSize * sizeof(char));
+		//Audioconverter.buffer = (char*)malloc(AudioSize * sizeof(char));
 
-		memcpy_s(Audioconverter.buffer, sizeof(Audioconverter.buffer), shortTochar.chr, sizeof(shortTochar.chr));
+		memcpy_s(Audioconverter.buffer, AudioSize, shortTochar.chr, AudioSize);
 
 		initPort();
 
-		outputToPort(Audioconverter.buffer, sizeof(Audioconverter.buffer) + 1);			// Send audio message over RS232 cable
+		outputToPort(Audioconverter.buffer, sizeof(Audioconverter.buffer) );			// Send audio message over RS232 cable
 		Sleep(1000);									// Allow time for signal propagation on cable
 
-		free(shortTochar.chr);
+		//free(shortTochar.chr);
 
 
 		purgePort();
