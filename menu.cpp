@@ -20,7 +20,7 @@
 
 char* AudioBuff = (char*)malloc((AudioSize * sizeof(char)));
 
-char* COMPORT = (char*)"COM8";
+char COMPORT[5] = "COM6";
 
 int SenderID = 0;
 int ReceiverID = 0;
@@ -378,26 +378,30 @@ void DisplayAddress(void) {
 
 	printf("\n SenderID = %d \n ReceiverID = %d", SenderID, ReceiverID);
 
-	printf(" \n Would you like to change the sender id?");
+	printf(" \n Would you like to change the sender id? \n");
 
-	scanf("%c", &c);
+	getchar();
+
+	scanf_s("%c", &c);
 
 	if (c == 'y' || c == 'Y') {
 
-		printf(" \n Please input your sender id");
-		scanf("%d", &i);
+		printf(" \n Please input your sender id\n");
+		scanf_s("%d", &i);
 
 		SenderID = i;
 
 	}
 
-	printf("\n Would you like to change the receiver id?");
+	printf("\n Would you like to change the receiver id?\n");
 
-	scanf("%c", &v);
+	getchar();
+
+	scanf_s("%c", &v);
 
 	if (v == 'y' || v == 'Y') {
-		printf(" \n Please input your receiver id");
-		scanf("%d", &j);
+		printf(" \n Please input your receiver id\n");
+		scanf_s("%d", &j);
 
 		ReceiverID = j;
 
@@ -468,6 +472,7 @@ void SendText(void) {
 	link node;
 
 	printf("How many messages?\n ");
+	getchar();
 	scanf_s("%d", &i);
 	link temp;
 	char NumMessage[8];
@@ -485,6 +490,7 @@ void SendText(void) {
 	outputToPort(NumMessage, 2);
 
 	printf("ready to continue? y/n \n");
+	getchar();
 	scanf("%s", p);
 
 	getchar();

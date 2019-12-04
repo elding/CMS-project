@@ -6,7 +6,7 @@
 
 #define EX_FATAL 1
 #define BUFSIZE 140
-extern char* COMPORT;
+extern char COMPORT[5];
 
 //#define COMPORT "COM5"	  	// Sender port - I use com0com and set up virtual ports 6 and 7 to communicate
 	// Receiver port - Start receiver first - Two programs must run concurrently use this port for second program
