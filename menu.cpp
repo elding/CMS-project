@@ -20,7 +20,7 @@
 
 char* AudioBuff = (char*)malloc((AudioSize * sizeof(char)));
 
-char COMPORT[5] = "COM6";
+char COMPORT[5] = "COM7";
 
 int SenderID = 0;
 int ReceiverID = 0;
@@ -30,7 +30,7 @@ extern HANDLE hCom;
 
 union Textconvert {
 	TextFrame frame;
-	char buffer[sizeof(frame)];
+	char buffer[sizeof(TextFrame)];
 }converter;
 
 union AudioConverter {
@@ -433,11 +433,13 @@ void RecordText(void) {
 		receive = (link)malloc(sizeof(nodeText)); // initialize queue memory
 
 
-		inputFromPort(msgIn, sizeof(converter.buffer) );
+		inputFromPort(msgIn, sizeof(converter.buffer) + 1);
 
 		//memcpy(receive->Data.message, msgIn, BUFSIZE);
 
-		memcpy(converter.buffer, msgIn, sizeof(msgIn +1) );
+		printf("\nsizey: %d\n", sizeof(TextFrame));
+
+		memcpy(converter.buffer, msgIn, sizeof(msgIn) );
 
 		
 		printf("Message: %s\n", converter.frame.r.message);
