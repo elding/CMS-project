@@ -123,6 +123,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="huffman.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="menu.cpp" />
     <ClCompile Include="message.cpp" />
@@ -133,6 +134,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="frame.h" />
+    <ClInclude Include="huffman.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="message.h" />
     <ClInclude Include="Queues.h" />

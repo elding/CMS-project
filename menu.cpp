@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include "RS232Comm.h"
 #include "RLE.h"
+#include "huffman.h"
 
 #define EX_FATAL 1
 #define BUFSIZE 140
@@ -19,6 +20,8 @@
 
 
 char* AudioBuff = (char*)malloc((AudioSize * sizeof(char)));
+
+unsigned char Compressbuff[AudioSize + 384];
 
 char COMPORT[5] = "COM7";
 
@@ -283,19 +286,11 @@ void TestRS232(void) {
 	}
 
 	else if (Switcher == 0) {
-		initPort();
-		// Receiver program - comment out these 3 lines if sender - Start receiver first
-		char msgIn[BUFSIZE];
-		inputFromPort(msgIn, BUFSIZE);					// Receive string from port
-		printf("\nMessage Received: %s\n\n", msgIn);	// Display message from port
-
-
-		purgePort();									// Purge the port
-		CloseHandle(hCom);								// Closes the handle pointing to the COM port
-		system("pause");
+		
+		RecordText();
 	}
 
-
+	MainMenu();
 
 }
 
@@ -339,7 +334,11 @@ int Playback(void) {
 	initPort();																// open the com port
 	
 
-	inputFromPort(shortToChar2.chr, sizeof(shortToChar2.chr));				// read data that was sent
+	inputFromPort(shortToChar2.chr, sizeof(shortToChar2.chr));	// read data that was sent
+
+	Huffman_Uncompress((unsigned char*)shortToChar2.chr, Compressbuff, AudioSize, 96384);
+
+	memcpy_s(shortToChar2.chr, AudioSize, Compressbuff, AudioSize);
 
 
 
@@ -680,6 +679,8 @@ void TransmitMessage(void) {
 
 	if (i == 1) {
 
+		char q;
+
 		memcpy_s(shortTochar.chr, AudioSize, RecordAudio(), AudioSize);
 
 		AudioFrame holder = { NULL, NULL };  // create a message frame with header and payload
@@ -720,16 +721,30 @@ void TransmitMessage(void) {
 
 		memcpy_s(Audioconverter.buffer, AudioSize, shortTochar.chr, AudioSize);
 
+
+
+
+		printf("Size of uncompressed = %d \n", sizeof(Audioconverter.buffer));
+
+		int size = Huffman_Compress((unsigned char*)Audioconverter.buffer, Compressbuff, sizeof(Audioconverter.buffer));
+
+		printf("\n size of compressed version %d \n", size);
+
+		memcpy_s(Audioconverter.buffer, AudioSize, Compressbuff, AudioSize);
+
+
 		initPort();
 
-		outputToPort(Audioconverter.buffer, sizeof(Audioconverter.buffer) );			// Send audio message over RS232 cable
+		outputToPort(Audioconverter.buffer, sizeof(Audioconverter.buffer));		// Send audio message over RS232 cable
 		Sleep(1000);									// Allow time for signal propagation on cable
 
-		//free(shortTochar.chr);
+			//free(shortTochar.chr);
 
 
 		purgePort();
 		CloseHandle(hCom);
+
+		
 		
 	}
 	else if (i == 2) {
